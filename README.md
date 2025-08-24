@@ -1,246 +1,212 @@
-# 3D Asset Processing MCP Server
+# 3D Asset Processing MCP
 
-A 3D asset processing server based on the Model Context Protocol (MCP), providing model analysis, optimization, and validation functions.
+A comprehensive system for processing, validating, optimizing, and analyzing 3D models, with a focus on glTF and GLB formats.
 
 ## Features
 
-- **Model Analysis**: Detailed analysis of 3D model geometry, materials, textures, and performance characteristics
-- **Model Optimization**: Optimize models using preset configurations, supporting multiple optimization strategies
-- **Model Validation**: Validate model compliance and platform compatibility
-- **Caching Mechanism**: Intelligent caching to improve processing efficiency
-- **Multi-format Support**: Support for glTF/GLB formats, with file, URL, and Base64 input options
+- **Validation**: Ensure 3D models meet standards using both built-in checks and the gltf-validator library
+- **Processing**: Convert between formats, extract textures, and apply optimizations using gltf-pipeline
+- **Transformation**: Apply advanced model transformations using gltf-transform for mesh simplification, texture compression, etc.
+- **Analysis**: Get detailed model statistics including geometry, materials, animations, and performance metrics
+- **Optimization**: Apply various optimization presets for different use cases (web, mobile, etc.)
 
-## Quick Start
-
-### Install Dependencies
+## Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/yourusername/3d-asset-processing-mcp.git
+cd 3d-asset-processing-mcp
+
+# Install dependencies
 npm install
-```
 
-### Build Project
-
-```bash
+# Build the project
 npm run build
 ```
 
-### Run in Development Mode
+### Prerequisites
 
-```bash
-npm run dev
-```
+- Node.js 16.x or higher
+- npm 7.x or higher
 
-### Run in Production Mode
+### Built-in Dependencies
+
+This MCP tool comes with all necessary dependencies pre-installed:
+
+- **gltf-pipeline**: Integrated for glTF processing and optimization
+- **gltf-transform**: Included for advanced model transformations
+- **gltf-validator**: Optional, for enhanced validation (install separately if needed)
+
+**No additional installations required!** Users can start using glTF processing features immediately after installing this MCP tool.
+
+## Usage
+
+### API Server
+
+Start the API server:
 
 ```bash
 npm start
 ```
 
-## MCP Tools
+The server will be available at http://localhost:3000 by default.
 
-### 1. analyze_model
+### Command Line Interface
 
-Analyze 3D models and provide detailed statistics and recommendations.
+The project includes a CLI for processing 3D models:
 
-**Input Parameters:**
-```json
-{
-  "input": {
-    "source": "path/to/model.glb",
-    "type": "file"
-  }
-}
+```bash
+# Convert between formats
+npx gltf-process convert input.gltf --format glb --output output.glb
+
+# Extract textures
+npx gltf-process extract-textures input.glb
+
+# Optimize a model
+npx gltf-process optimize input.glb --draco --output optimized.glb
+
+# Process with custom options
+npx gltf-process process input.glb --separate-textures --optimize --draco
 ```
 
-**Output Example:**
-```json
-{
-  "success": true,
-  "data": {
-    "metadata": {
-      "fileSize": 1024000,
-      "format": "GLB",
-      "version": "2.0"
-    },
-    "geometry": {
-      "meshCount": 5,
-      "triangleCount": 15000,
-      "vertexCount": 8000
-    },
-    "performance": {
-      "estimatedDrawCalls": 5,
-      "recommendations": ["Consider texture compression"]
-    }
-  }
-}
-```
+### API Endpoints
 
-### 2. optimize_model
+#### Validation
 
-Optimize 3D models using preset configurations.
+```http
+POST /api/validate
+Content-Type: application/json
 
-**Input Parameters:**
-```json
 {
   "input": {
-    "source": "path/to/model.glb",
-    "type": "file"
-  },
-  "preset": "web-high",
-  "outputPath": "path/to/optimized.glb"
-}
-```
-
-**Available Presets:**
-- `web-high`: High quality Web optimization
-- `web-lite`: Lightweight Web optimization
-- `mobile`: Mobile optimization
-- `editor-safe`: Editor-safe optimization
-
-### 3. validate_model
-
-Validate 3D model compliance and compatibility.
-
-**Input Parameters:**
-```json
-{
-  "input": {
-    "source": "path/to/model.glb",
+    "source": "/path/to/model.glb",
     "type": "file"
   },
   "rules": "web-compatible"
 }
 ```
 
-### 4. get_presets
+#### Analysis
 
-Get a list of available optimization presets.
+```http
+POST /api/analyze
+Content-Type: application/json
 
-## Configuring MCP in Kiro
-
-Create or edit `.kiro/settings/mcp.json` in your Kiro workspace:
-
-```json
 {
-  "mcpServers": {
-    "3d-asset-processing": {
-      "command": "node",
-      "args": ["path/to/3d-asset-processing-mcp/dist/server.js"],
-      "env": {
-        "NODE_ENV": "production"
-      },
-      "disabled": false,
-      "autoApprove": [
-        "analyze_model",
-        "validate_model",
-        "get_presets"
-      ]
-    }
+  "input": {
+    "source": "/path/to/model.glb",
+    "type": "file"
   }
 }
 ```
 
-## Usage Examples
+#### Optimization
 
-In Kiro, you can use it like this:
+```http
+POST /api/optimize
+Content-Type: application/json
 
-```
-Analyze this 3D model: /path/to/model.glb
-```
-
-```
-Optimize this model using the web-lite preset: /path/to/model.glb
-```
-
-```
-Validate this model's Web compatibility: /path/to/model.glb
-```
-
-## Supported Input Formats
-
-### File Path
-```json
 {
-  "source": "/absolute/path/to/model.glb",
-  "type": "file"
+  "input": {
+    "source": "/path/to/model.glb",
+    "type": "file"
+  },
+  "preset": "web-high",
+  "outputPath": "/path/to/output.glb"
 }
 ```
 
-### URL
-```json
+#### Processing (gltf-pipeline)
+
+```http
+POST /api/gltf/process
+Content-Type: application/json
+
 {
-  "source": "https://example.com/model.glb",
-  "type": "url"
+  "inputPath": "/path/to/model.glb",
+  "outputPath": "/path/to/output.glb",
+  "draco": true,
+  "optimize": true
 }
 ```
 
-### Base64
-```json
+#### Transformation (gltf-transform)
+
+```http
+POST /api/transform/process
+Content-Type: application/json
+
 {
-  "source": "data:model/gltf-binary;base64,R0xURg...",
-  "type": "base64"
+  "inputPath": "/path/to/model.glb",
+  "outputPath": "/path/to/output.glb",
+  "simplify": true,
+  "simplifyOptions": {
+    "ratio": 0.5
+  },
+  "compressTextures": true
 }
 ```
 
-## Project Structure
+## MCP Integration
 
-```
-src/
-├── core/           # Core processing modules
-│   ├── analyzer.ts # Model analyzer
-│   ├── optimizer.ts# Model optimizer
-│   └── validator.ts# Model validator
-├── tools/          # MCP tool definitions
-│   └── index.ts    # Tool exports
-├── types/          # TypeScript type definitions
-│   └── index.ts
-├── utils/          # Utility functions
-│   ├── cache.ts    # Cache management
-│   ├── file-handler.ts # File handling
-│   └── logger.ts   # Logging system
-└── server.ts       # MCP server main file
-```
+This project implements the Model Context Protocol (MCP), allowing it to be used as a plugin in compatible environments. The following MCP tools are available:
+
+### Core Tools
+- `analyze_model`: Analyze a 3D model and provide detailed statistics
+- `optimize_model`: Optimize a 3D model using predefined presets
+- `validate_model`: Validate a 3D model for compliance and compatibility
+- `get_presets`: Get list of available optimization presets
+- `get_validator_status`: Check the status and availability of gltf-validator
+
+### glTF Pipeline Tools
+- `gltf_process`: Process glTF files using gltf-pipeline with various optimization options
+- `gltf_convert`: Convert between glTF and GLB formats
+- `gltf_draco`: Apply Draco compression to glTF geometry
+
+### glTF Transform Tools
+- `gltf_transform`: Process glTF files using gltf-transform library with advanced optimization options
+- `gltf_transform_optimize`: Optimize glTF files using gltf-transform with default optimization settings
+- `gltf_simplify`: Simplify geometry in glTF files to reduce polygon count
+- `gltf_compress_textures`: Compress textures in glTF files
+- `gltf_draco`: Apply Draco compression to glTF geometry
+
+## Architecture
+
+The project follows a three-layer architecture:
+
+1. **Core Layer**: Core processing functionality (validation, optimization, analysis)
+2. **Service Layer**: API endpoints and MCP tools
+3. **Presentation Layer**: CLI interface and HTTP server
+
+## Optimization Presets
+
+The following optimization presets are available:
+
+- `web-high`: High quality web optimization - preserves visual quality while optimizing for web delivery
+- `web-lite`: Lightweight web optimization - prioritizes file size reduction over quality
+- `mobile`: Mobile-optimized preset - balances quality and performance for mobile devices
+- `editor-safe`: Editor-safe optimization - minimal changes that preserve editability
 
 ## Development
 
-### Adding New Tools
+### Building
 
-1. Define a new tool in `src/tools/index.ts`
-2. Implement the tool's `execute` method
-3. Add appropriate input validation and error handling
-
-### Adding New Optimization Presets
-
-Add new preset configurations in the `getPreset` method in `src/core/optimizer.ts`.
-
-## Logs
-
-Log files are located in the `logs/` directory:
-- `error.log`: Error logs
-- `combined.log`: All logs
-
-## Performance Optimization
-
-- Use memory caching to avoid repeated processing
-- Automatic temporary file cleanup
-- Support for large file streaming
-- Smart error recovery
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Module not found error**: Make sure you've run `npm install` and `npm run build`
-2. **Permission error**: Ensure you have read/write permissions for the temporary directory
-3. **Out of memory**: For large files, consider increasing the Node.js memory limit
-
-### Debug Mode
-
-Set environment variables to enable detailed logging:
 ```bash
-NODE_ENV=development npm run dev
+npm run build
+```
+
+### Testing
+
+```bash
+npm test
+```
+
+### Linting
+
+```bash
+npm run lint
 ```
 
 ## License
 
-MIT License
+MIT

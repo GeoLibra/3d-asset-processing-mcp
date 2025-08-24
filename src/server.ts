@@ -136,19 +136,15 @@ class AssetProcessingMCPServer {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
 
-    logger.info('3D Asset Processing MCP Server started');
-
-    // 输出服务器信息
-    console.error('3D Asset Processing MCP Server v1.0.0');
-    console.error('Available tools:');
+    logger.info('3D Asset Processing MCP Server v1.0.0');
+    logger.info('Available tools:');
     allTools.forEach(tool => {
-      console.error(`  - ${tool.name}: ${tool.description}`);
+      logger.info(`  - ${tool.name}: ${tool.description}`);
     });
-    console.error('Server ready for connections...');
+    logger.info('Server ready for connections...');
   }
 }
 
-// 启动服务器
 if (require.main === module) {
   const server = new AssetProcessingMCPServer();
   server.run().catch((error) => {

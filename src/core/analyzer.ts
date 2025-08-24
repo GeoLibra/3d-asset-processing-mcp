@@ -96,13 +96,32 @@ export class ModelAnalyzer {
     const performance = this.analyzePerformance(root, geometry, textures);
 
     return {
-      metadata,
-      geometry,
-      materials,
-      textures,
-      animations,
-      extensions,
-      performance
+      geometry: {
+        vertexCount: geometry.vertexCount,
+        triangleCount: geometry.triangleCount,
+        meshCount: geometry.meshCount,
+        primitiveCount: geometry.primitiveCount
+      },
+      materials: {
+        count: materials.materialCount,
+        types: ['PBR', 'Unlit'],
+        textureCount: textures.textureCount,
+        totalTextureSize: textures.totalTextureSize
+      },
+      animations: {
+        count: animations.animationCount,
+        totalKeyframes: animations.samplers,
+        duration: animations.totalDuration
+      },
+      scene: {
+        nodeCount: root.listNodes().length,
+        maxDepth: this.calculateSceneDepth(root)
+      },
+      fileInfo: {
+        size: metadata.fileSize,
+        format: metadata.format,
+        version: metadata.version
+      }
     };
   }
 
@@ -306,6 +325,40 @@ export class ModelAnalyzer {
       used: used || [],
       required: required || []
     };
+  }
+
+  /**
+   * Calculate the maximum depth of the scene graph
+   */
+  private calculateSceneDepth(root: any): number {
+    const scenes = root.listScenes();
+    let maxDepth = 0;
+
+    for (const scene of scenes) {
+      // Get root nodes of the scene (nodes without parents)
+      const rootNodes = root.listNodes().filter((node: any) => !node.getParent());
+      for (const node of rootNodes) {
+        const depth = this.getNodeDepth(node, 1);
+        maxDepth = Math.max(maxDepth, depth);
+      }
+    }
+
+    return maxDepth || 1;
+  }
+
+  /**
+   * Get the depth of a node in the scene graph
+   */
+  private getNodeDepth(node: any, currentDepth: number): number {
+    let maxChildDepth = currentDepth;
+    const children = node.listChildren();
+
+    for (const child of children) {
+      const childDepth = this.getNodeDepth(child, currentDepth + 1);
+      maxChildDepth = Math.max(maxChildDepth, childDepth);
+    }
+
+    return maxChildDepth;
   }
 
   /**

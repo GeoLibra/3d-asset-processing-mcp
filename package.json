@@ -8,23 +8,41 @@
     "build": "tsc",
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
-    "test": "node test-model.js",
-    "setup": "./quick-start.sh"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "setup": "./quick-start.sh",
+    "gltf": "tsx src/cli/gltf-process-cli.ts",
+    "gltf:convert": "tsx src/cli/gltf-process-cli.ts convert",
+    "gltf:extract": "tsx src/cli/gltf-process-cli.ts extract-textures",
+    "gltf:optimize": "tsx src/cli/gltf-process-cli.ts optimize"
+  },
+  "bin": {
+    "gltf-process": "./dist/cli/gltf-process-cli.js"
   },
   "dependencies": {
     "@gltf-transform/core": "^3.7.0",
     "@gltf-transform/functions": "^3.7.0",
     "@modelcontextprotocol/sdk": "^0.4.0",
+    "commander": "^11.0.0",
+    "express": "^4.18.2",
+    "fs-extra": "^11.1.0",
+    "gltf-pipeline": "^4.3.0",
     "gltf-validator": "^2.0.0-dev.3.8",
     "node-cache": "^5.1.0",
-    "winston": "^3.8.0",
     "uuid": "^9.0.0",
-    "fs-extra": "^11.1.0"
+    "winston": "^3.8.0"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
-    "@types/uuid": "^9.0.0",
+    "@types/express": "^4.17.23",
     "@types/fs-extra": "^11.0.0",
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "@types/supertest": "^2.0.12",
+    "@types/uuid": "^9.0.0",
+    "jest": "^29.5.0",
+    "supertest": "^6.3.3",
+    "ts-jest": "^29.1.0",
     "tsx": "^4.0.0",
     "typescript": "^5.0.0"
   },

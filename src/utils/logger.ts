@@ -1,4 +1,5 @@
-import winston from 'winston';
+// Use require for CommonJS modules
+const winston = require('winston');
 
 // Create logger
 export const logger = winston.createLogger({

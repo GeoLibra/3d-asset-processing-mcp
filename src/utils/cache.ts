@@ -1,10 +1,12 @@
-import NodeCache from 'node-cache';
+import * as NodeCacheModule from 'node-cache';
+// Use require for CommonJS modules
+const NodeCache = require('node-cache');
 import { createHash } from 'crypto';
 import { CacheEntry } from '../types';
 import logger from './logger';
 
 export class CacheManager {
-  private memoryCache: NodeCache;
+  private memoryCache: any; // Using any temporarily to fix type issues
   private hitCount = 0;
   private missCount = 0;
 
@@ -17,11 +19,11 @@ export class CacheManager {
     });
 
     // Listen for cache events
-    this.memoryCache.on('expired', (key, value) => {
+    this.memoryCache.on('expired', (key: any, value: any) => {
       logger.debug(`Cache key expired: ${key}`);
     });
 
-    this.memoryCache.on('del', (key, value) => {
+    this.memoryCache.on('del', (key: any, value: any) => {
       logger.debug(`Cache key deleted: ${key}`);
     });
   }
@@ -41,7 +43,7 @@ export class CacheManager {
    * Get cache
    */
   get<T>(key: string): T | null {
-    const value = this.memoryCache.get<T>(key);
+    const value = this.memoryCache.get(key) as T | undefined;
     if (value !== undefined) {
       this.hitCount++;
       logger.debug(`Cache hit: ${key}`);

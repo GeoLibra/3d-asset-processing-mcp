@@ -1,15 +1,7 @@
 import { ValidationReport, ValidationIssue, ProcessResult } from '../types';
 import { globalCache } from '../utils/cache';
 import logger from '../utils/logger';
-
-// Try to import gltf-validator
-let gltfValidator: any = null;
-try {
-  gltfValidator = require('gltf-validator');
-  logger.info('Loaded gltf-validator JavaScript API');
-} catch (error) {
-  logger.warn('gltf-validator JavaScript API not available, using basic validation');
-}
+const gltfValidator = require('gltf-validator');
 
 export class SimpleValidator {
   /**
@@ -36,18 +28,11 @@ export class SimpleValidator {
 
       logger.info(`Starting validation for: ${filePath}`);
 
-      let report: ValidationReport;
-
-      if (gltfValidator) {
-        // Use gltf-validator JavaScript API
-        report = await this.validateWithJSAPI(filePath, rules);
-      } else {
-        // Fall back to basic validation
-        report = await this.basicValidation(filePath, rules);
-      }
+      // Perform validation
+      const report = await this.validateModel(filePath, rules);
 
       // Cache result
-      globalCache.set(cacheKey, report, 1800); // 30分钟缓存
+      globalCache.set(cacheKey, report, 1800); // 30 minute cache
 
       const processingTime = Date.now() - startTime;
       logger.info(`Validation completed in ${processingTime}ms for: ${filePath}`);
@@ -75,9 +60,23 @@ export class SimpleValidator {
   }
 
   /**
-   * Validate using gltf-validator JavaScript API
+   * Validate model using gltf-validator
    */
-  private async validateWithJSAPI(filePath: string, rules?: string): Promise<ValidationReport> {
+  private async validateModel(filePath: string, rules?: string): Promise<ValidationReport> {
+    // First perform basic file checks (these should happen regardless of gltf-validator)
+    const fileChecks = await this.performFileChecks(filePath);
+
+    // If file checks found critical errors, return early
+    if (fileChecks.errors.length > 0) {
+      return {
+        valid: false,
+        errors: fileChecks.errors,
+        warnings: fileChecks.warnings,
+        info: fileChecks.info,
+        compatibility: this.getDefaultCompatibility()
+      };
+    }
+
     try {
       const fs = require('fs');
       const fileBuffer = fs.readFileSync(filePath);
@@ -86,9 +85,9 @@ export class SimpleValidator {
       const validatorResult = await gltfValidator.validateBytes(fileBuffer);
 
       // Convert to our format
-      const errors: ValidationIssue[] = [];
-      const warnings: ValidationIssue[] = [];
-      const info: ValidationIssue[] = [];
+      const errors: ValidationIssue[] = [...fileChecks.errors];
+      const warnings: ValidationIssue[] = [...fileChecks.warnings];
+      const info: ValidationIssue[] = [...fileChecks.info];
 
       // Process issues from gltf-validator
       if (validatorResult.issues) {
@@ -114,11 +113,9 @@ export class SimpleValidator {
         }
       }
 
-      // Add custom checks
-      const customChecks = await this.performCustomChecks(filePath, rules);
-      errors.push(...customChecks.errors);
-      warnings.push(...customChecks.warnings);
-      info.push(...customChecks.info);
+      // Add rule-specific checks
+      const ruleChecks = this.performRuleChecks(rules);
+      info.push(...ruleChecks);
 
       // Compatibility check
       const compatibility = this.checkCompatibility(validatorResult, rules);
@@ -133,8 +130,24 @@ export class SimpleValidator {
 
     } catch (error) {
       logger.error('gltf-validator JavaScript API failed:', error);
-      // Fall back to basic validation
-      return this.basicValidation(filePath, rules);
+
+      // Create a basic error report including file checks
+      const errors: ValidationIssue[] = [
+        ...fileChecks.errors,
+        {
+          code: 'VALIDATOR_ERROR',
+          message: `Validation error: ${error instanceof Error ? error.message : String(error)}`,
+          severity: 'error'
+        }
+      ];
+
+      return {
+        valid: false,
+        errors,
+        warnings: fileChecks.warnings,
+        info: fileChecks.info,
+        compatibility: this.getDefaultCompatibility()
+      };
     }
   }
 
@@ -151,56 +164,13 @@ export class SimpleValidator {
   }
 
   /**
-   * Perform custom checks
+   * Perform basic file checks
    */
-  private async performCustomChecks(filePath: string, rules?: string): Promise<{
+  private async performFileChecks(filePath: string): Promise<{
     errors: ValidationIssue[];
     warnings: ValidationIssue[];
     info: ValidationIssue[];
   }> {
-    const errors: ValidationIssue[] = [];
-    const warnings: ValidationIssue[] = [];
-    const info: ValidationIssue[] = [];
-
-    try {
-      const fs = require('fs');
-      const stats = fs.statSync(filePath);
-
-      // File size check
-      if (stats.size > 100 * 1024 * 1024) { // 100MB
-        warnings.push({
-          code: 'LARGE_FILE_SIZE',
-          message: `File is very large (${Math.round(stats.size / 1024 / 1024)}MB)`,
-          severity: 'warning'
-        });
-      }
-
-      // Add specific checks based on rules
-      if (rules === 'web-compatible') {
-        info.push({
-          code: 'WEB_COMPATIBILITY_CHECK',
-          message: 'Checked for web compatibility',
-          severity: 'info'
-        });
-      } else if (rules === 'mobile-compatible') {
-        info.push({
-          code: 'MOBILE_COMPATIBILITY_CHECK',
-          message: 'Checked for mobile compatibility',
-          severity: 'info'
-        });
-      }
-
-    } catch (error) {
-      logger.warn('Custom checks failed:', error);
-    }
-
-    return { errors, warnings, info };
-  }
-
-  /**
-   * Basic validation (when gltf-validator is not available)
-   */
-  private async basicValidation(filePath: string, rules?: string): Promise<ValidationReport> {
     const errors: ValidationIssue[] = [];
     const warnings: ValidationIssue[] = [];
     const info: ValidationIssue[] = [];
@@ -216,8 +186,10 @@ export class SimpleValidator {
           message: 'File does not exist',
           severity: 'error'
         });
-        return { valid: false, errors, warnings, info, compatibility: this.getDefaultCompatibility() };
+        return { errors, warnings, info };
       }
+
+      const stats = fs.statSync(filePath);
 
       // Check file extension
       const ext = path.extname(filePath).toLowerCase();
@@ -229,8 +201,7 @@ export class SimpleValidator {
         });
       }
 
-      // Check file size
-      const stats = fs.statSync(filePath);
+      // File size check
       if (stats.size === 0) {
         errors.push({
           code: 'EMPTY_FILE',
@@ -245,7 +216,7 @@ export class SimpleValidator {
         });
       }
 
-      // Basic format check
+      // Basic format check for GLB files
       if (ext === '.glb') {
         const buffer = fs.readFileSync(filePath);
         if (buffer.length < 12 || buffer.toString('ascii', 0, 4) !== 'glTF') {
@@ -255,54 +226,41 @@ export class SimpleValidator {
             severity: 'error'
           });
         }
-      } else if (ext === '.gltf') {
-        try {
-          const content = fs.readFileSync(filePath, 'utf8');
-          const gltf = JSON.parse(content);
-
-          if (!gltf.asset || !gltf.asset.version) {
-            errors.push({
-              code: 'MISSING_ASSET_VERSION',
-              message: 'Missing asset version in glTF file',
-              severity: 'error'
-            });
-          } else if (gltf.asset.version !== '2.0') {
-            warnings.push({
-              code: 'UNSUPPORTED_VERSION',
-              message: `glTF version ${gltf.asset.version} may not be fully supported`,
-              severity: 'warning'
-            });
-          }
-        } catch (jsonError) {
-          errors.push({
-            code: 'INVALID_JSON',
-            message: 'Invalid JSON format in glTF file',
-            severity: 'error'
-          });
-        }
       }
 
-      info.push({
-        code: 'BASIC_VALIDATION_COMPLETE',
-        message: gltfValidator ? 'Validation completed with gltf-validator' : 'Basic validation completed',
-        severity: 'info'
-      });
-
     } catch (error) {
+      logger.warn('File checks failed:', error);
       errors.push({
-        code: 'VALIDATION_ERROR',
-        message: `Validation error: ${error instanceof Error ? error.message : String(error)}`,
+        code: 'FILE_CHECK_ERROR',
+        message: `File check error: ${error instanceof Error ? error.message : String(error)}`,
         severity: 'error'
       });
     }
 
-    return {
-      valid: errors.length === 0,
-      errors,
-      warnings,
-      info,
-      compatibility: this.getDefaultCompatibility()
-    };
+    return { errors, warnings, info };
+  }
+
+  /**
+   * Perform rule-specific checks
+   */
+  private performRuleChecks(rules?: string): ValidationIssue[] {
+    const info: ValidationIssue[] = [];
+
+    if (rules === 'web-compatible') {
+      info.push({
+        code: 'WEB_COMPATIBILITY_CHECK',
+        message: 'Checked for web compatibility',
+        severity: 'info'
+      });
+    } else if (rules === 'mobile-compatible') {
+      info.push({
+        code: 'MOBILE_COMPATIBILITY_CHECK',
+        message: 'Checked for mobile compatibility',
+        severity: 'info'
+      });
+    }
+
+    return info;
   }
 
   /**
@@ -349,25 +307,14 @@ export class SimpleValidator {
   }
 
   /**
-   * Check if gltf-validator is available
-   */
-  async isValidatorAvailable(): Promise<boolean> {
-    return gltfValidator !== null;
-  }
-
-  /**
    * Get validator information
    */
   async getValidatorInfo(): Promise<{ available: boolean; type?: string; version?: string }> {
-    if (gltfValidator) {
-      return {
-        available: true,
-        type: 'JavaScript API',
-        version: 'bundled'
-      };
-    } else {
-      return { available: false };
-    }
+    return {
+      available: true,
+      type: 'JavaScript API',
+      version: 'bundled'
+    };
   }
 }
 
