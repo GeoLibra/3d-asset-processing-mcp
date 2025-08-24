@@ -1,0 +1,40 @@
+{
+  "name": "3d-asset-processing-mcp",
+  "version": "1.0.0",
+  "description": "3D Asset Processing MCP Server",
+  "main": "dist/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "test": "node test-model.js",
+    "setup": "./quick-start.sh"
+  },
+  "dependencies": {
+    "@gltf-transform/core": "^3.7.0",
+    "@gltf-transform/functions": "^3.7.0",
+    "@modelcontextprotocol/sdk": "^0.4.0",
+    "gltf-validator": "^2.0.0-dev.3.8",
+    "node-cache": "^5.1.0",
+    "winston": "^3.8.0",
+    "uuid": "^9.0.0",
+    "fs-extra": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/uuid": "^9.0.0",
+    "@types/fs-extra": "^11.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "keywords": [
+    "3d",
+    "gltf",
+    "asset-processing",
+    "mcp",
+    "optimization"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
