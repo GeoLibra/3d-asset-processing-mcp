@@ -1,6 +1,6 @@
 # 3D Asset Processing MCP
 
-A comprehensive system for processing, validating, optimizing, and analyzing 3D models, with a focus on glTF and GLB formats.
+A comprehensive system for processing, validating, optimizing, and analyzing 3D models, with a focus on glTF.
 
 ## Features
 
@@ -10,24 +10,22 @@ A comprehensive system for processing, validating, optimizing, and analyzing 3D 
 - **Analysis**: Get detailed model statistics including geometry, materials, animations, and performance metrics
 - **Optimization**: Apply various optimization presets for different use cases (web, mobile, etc.)
 
-## Installation
+## Getting started
 
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/3d-asset-processing-mcp.git
-cd 3d-asset-processing-mcp
-
-# Install dependencies
-npm install
-
-# Build the project
-npm run build
+install the Playwright MCP server with your client.
+```json
+{
+  "mcpServers": {
+    "3d-asset-processing-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "3d-asset-processing-mcp@0.0.1-beta.1"
+      ]
+    }
+  }
+}
 ```
-
-### Prerequisites
-
-- Node.js 16.x or higher
-- npm 7.x or higher
 
 ### Built-in Dependencies
 
@@ -39,17 +37,6 @@ This MCP tool comes with all necessary dependencies pre-installed:
 
 **No additional installations required!** Users can start using glTF processing features immediately after installing this MCP tool.
 
-## Usage
-
-### API Server
-
-Start the API server:
-
-```bash
-npm start
-```
-
-The server will be available at http://localhost:3000 by default.
 
 ### Command Line Interface
 
@@ -71,81 +58,6 @@ npx gltf-process process input.glb --separate-textures --optimize --draco
 
 ### API Endpoints
 
-#### Validation
-
-```http
-POST /api/validate
-Content-Type: application/json
-
-{
-  "input": {
-    "source": "/path/to/model.glb",
-    "type": "file"
-  },
-  "rules": "web-compatible"
-}
-```
-
-#### Analysis
-
-```http
-POST /api/analyze
-Content-Type: application/json
-
-{
-  "input": {
-    "source": "/path/to/model.glb",
-    "type": "file"
-  }
-}
-```
-
-#### Optimization
-
-```http
-POST /api/optimize
-Content-Type: application/json
-
-{
-  "input": {
-    "source": "/path/to/model.glb",
-    "type": "file"
-  },
-  "preset": "web-high",
-  "outputPath": "/path/to/output.glb"
-}
-```
-
-#### Processing (gltf-pipeline)
-
-```http
-POST /api/gltf/process
-Content-Type: application/json
-
-{
-  "inputPath": "/path/to/model.glb",
-  "outputPath": "/path/to/output.glb",
-  "draco": true,
-  "optimize": true
-}
-```
-
-#### Transformation (gltf-transform)
-
-```http
-POST /api/transform/process
-Content-Type: application/json
-
-{
-  "inputPath": "/path/to/model.glb",
-  "outputPath": "/path/to/output.glb",
-  "simplify": true,
-  "simplifyOptions": {
-    "ratio": 0.5
-  },
-  "compressTextures": true
-}
-```
 
 ## MCP Integration
 
@@ -170,41 +82,18 @@ This project implements the Model Context Protocol (MCP), allowing it to be used
 - `gltf_compress_textures`: Compress textures in glTF files
 - `gltf_draco`: Apply Draco compression to glTF geometry
 
-## Architecture
-
-The project follows a three-layer architecture:
-
-1. **Core Layer**: Core processing functionality (validation, optimization, analysis)
-2. **Service Layer**: API endpoints and MCP tools
-3. **Presentation Layer**: CLI interface and HTTP server
-
-## Optimization Presets
-
-The following optimization presets are available:
-
-- `web-high`: High quality web optimization - preserves visual quality while optimizing for web delivery
-- `web-lite`: Lightweight web optimization - prioritizes file size reduction over quality
-- `mobile`: Mobile-optimized preset - balances quality and performance for mobile devices
-- `editor-safe`: Editor-safe optimization - minimal changes that preserve editability
-
 ## Development
 
-### Building
-
 ```bash
+# Clone the repository
+git clone https://github.com/yourusername/3d-asset-processing-mcp.git
+cd 3d-asset-processing-mcp
+
+# Install dependencies
+npm install
+
+# Build the project
 npm run build
-```
-
-### Testing
-
-```bash
-npm test
-```
-
-### Linting
-
-```bash
-npm run lint
 ```
 
 ## License

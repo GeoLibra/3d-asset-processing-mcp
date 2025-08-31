@@ -1,6 +1,6 @@
 {
   "name": "3d-asset-processing-mcp",
-  "version": "1.0.0",
+  "version": "0.0.1-beta.1",
   "description": "3D Asset Processing MCP Server",
   "main": "dist/server.js",
   "type": "commonjs",
@@ -18,7 +18,7 @@
     "gltf:optimize": "tsx src/cli/gltf-process-cli.ts optimize"
   },
   "bin": {
-    "gltf-process": "./dist/cli/gltf-process-cli.js"
+    "3d-asset-processing-mcp": "./dist/server.js"
   },
   "dependencies": {
     "@gltf-transform/core": "^3.7.0",
@@ -53,6 +53,6 @@
     "mcp",
     "optimization"
   ],
-  "author": "Your Name",
+  "author": "geolibra",
   "license": "MIT"
 }
