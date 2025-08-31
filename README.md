@@ -56,9 +56,6 @@ npx gltf-process optimize input.glb --draco --output optimized.glb
 npx gltf-process process input.glb --separate-textures --optimize --draco
 ```
 
-### API Endpoints
-
-
 ## MCP Integration
 
 This project implements the Model Context Protocol (MCP), allowing it to be used as a plugin in compatible environments. The following MCP tools are available:
