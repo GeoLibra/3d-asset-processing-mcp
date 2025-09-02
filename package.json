@@ -1,6 +1,6 @@
 {
   "name": "3d-asset-processing-mcp",
-  "version": "0.0.1-beta.1",
+  "version": "0.0.1-beta.2",
   "description": "3D Asset Processing MCP Server",
   "main": "dist/server.js",
   "type": "commonjs",
@@ -47,6 +47,10 @@
     "ts-jest": "^29.1.0",
     "tsx": "^4.0.0",
     "typescript": "^5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:GeoLibra/3d-asset-processing-mcp.git"
   },
   "keywords": [
     "3d",
