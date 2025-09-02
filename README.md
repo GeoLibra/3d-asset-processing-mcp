@@ -20,7 +20,7 @@ install the Playwright MCP server with your client.
       "command": "npx",
       "args": [
         "-y",
-        "3d-asset-processing-mcp@0.0.1-beta.1"
+        "3d-asset-processing-mcp@0.0.1-beta.2"
       ]
     }
   }
@@ -83,7 +83,7 @@ This project implements the Model Context Protocol (MCP), allowing it to be used
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/3d-asset-processing-mcp.git
+git clone git@github.com:GeoLibra/3d-asset-processing-mcp.git
 cd 3d-asset-processing-mcp
 
 # Install dependencies
