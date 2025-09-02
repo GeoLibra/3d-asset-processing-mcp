@@ -6,8 +6,72 @@ import logger from '../utils/logger';
 export class ModelAnalyzer {
   private io: NodeIO;
 
+  private initialized: Promise<void>;
+
   constructor() {
+    // Initialize IO
     this.io = new NodeIO();
+    this.initialized = this.initializeAsync();
+  }
+
+  private async initializeAsync(): Promise<void> {
+    const isTestEnv = process.env.JEST_WORKER_ID !== undefined || process.env.NODE_ENV === 'test';
+
+    if (!isTestEnv) {
+      try {
+        // Dynamically import and register extensions
+        const { ALL_EXTENSIONS } = await import('@gltf-transform/extensions');
+        this.io.registerExtensions(ALL_EXTENSIONS);
+        logger.debug('Registered ALL_EXTENSIONS successfully');
+
+      // Register decoders
+      const dependencies: Record<string, any> = {};
+
+      // Try to register Draco decoder
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const draco3d = require('draco3dgltf');
+        if (draco3d && draco3d.createDecoderModule) {
+          dependencies['draco3d.decoder'] = await draco3d.createDecoderModule();
+          logger.debug('Registered Draco decoder');
+        }
+      } catch (e) {
+        logger.warn('Draco decoder not available:', e instanceof Error ? e.message : String(e));
+      }
+
+      // Try to register Meshopt decoder
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const meshopt = require('meshoptimizer');
+        if (meshopt && meshopt.MeshoptDecoder) {
+          dependencies['meshopt.decoder'] = meshopt.MeshoptDecoder;
+          logger.debug('Registered Meshopt decoder');
+        }
+      } catch (e) {
+        try {
+          // Fallback to meshopt_decoder package
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          const meshoptDecoder = require('meshopt_decoder');
+          dependencies['meshopt.decoder'] = meshoptDecoder.default || meshoptDecoder.MeshoptDecoder || meshoptDecoder;
+          logger.debug('Registered Meshopt decoder (fallback)');
+        } catch (e2) {
+          logger.warn('Meshopt decoder not available:', e instanceof Error ? e.message : String(e));
+        }
+      }
+
+        // Register all available dependencies
+        if (Object.keys(dependencies).length > 0) {
+          this.io.registerDependencies(dependencies);
+          logger.debug(`Registered ${Object.keys(dependencies).length} decoders`);
+        }
+
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        logger.warn(`Failed to initialize extensions and decoders: ${msg}`);
+      }
+    } else {
+      logger.debug('Skipping extensions registration in test environment');
+    }
   }
 
   /**
@@ -17,6 +81,9 @@ export class ModelAnalyzer {
     const startTime = Date.now();
 
     try {
+      // Wait for initialization to complete
+      await this.initialized;
+
       // Check cache
       const cacheKey = globalCache.generateKey('analysis', filePath);
       const cached = globalCache.get<ModelAnalysis>(cacheKey);
@@ -116,6 +183,11 @@ export class ModelAnalyzer {
       scene: {
         nodeCount: root.listNodes().length,
         maxDepth: this.calculateSceneDepth(root)
+      },
+      extensions: {
+        used: extensions.used,
+        required: extensions.required,
+        count: extensions.used.length
       },
       fileInfo: {
         size: metadata.fileSize,
@@ -318,12 +390,24 @@ export class ModelAnalyzer {
    * Analyze extensions
    */
   private analyzeExtensions(root: any) {
-    const used = root.listExtensionsUsed();
-    const required = root.listExtensionsRequired();
+    const usedExtensions = root.listExtensionsUsed();
+    const requiredExtensions = root.listExtensionsRequired();
+
+    // Extract extension names from extension objects
+    const used = usedExtensions ? usedExtensions.map((ext: any) => ext.extensionName || ext) : [];
+    const required = requiredExtensions ? requiredExtensions.map((ext: any) => ext.extensionName || ext) : [];
+
+    // Log extensions for debugging
+    if (used && used.length > 0) {
+      logger.info(`Extensions used: ${used.join(', ')}`);
+    }
+    if (required && required.length > 0) {
+      logger.info(`Extensions required: ${required.join(', ')}`);
+    }
 
     return {
-      used: used || [],
-      required: required || []
+      used,
+      required
     };
   }
 

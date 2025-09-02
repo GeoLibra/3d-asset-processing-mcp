@@ -25,10 +25,12 @@
     "@gltf-transform/functions": "^3.7.0",
     "@modelcontextprotocol/sdk": "^0.4.0",
     "commander": "^11.0.0",
+    "draco3dgltf": "^1.5.7",
     "express": "^4.18.2",
     "fs-extra": "^11.1.0",
     "gltf-pipeline": "^4.3.0",
     "gltf-validator": "^2.0.0-dev.3.8",
+    "meshoptimizer": "^0.25.0",
     "node-cache": "^5.1.0",
     "uuid": "^9.0.0",
     "winston": "^3.8.0"

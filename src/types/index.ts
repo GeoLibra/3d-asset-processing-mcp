@@ -6,50 +6,36 @@ export interface ModelInput {
 }
 
 export interface ModelAnalysis {
-  metadata: {
-    fileSize: number;
-    format: 'glTF' | 'GLB';
-    version: string;
-    generator: string;
-  };
   geometry: {
-    meshCount: number;
-    primitiveCount: number;
     vertexCount: number;
     triangleCount: number;
-    hasNormals: boolean;
-    hasTangents: boolean;
-    hasTexCoords: boolean;
-    hasColors: boolean;
+    meshCount: number;
+    primitiveCount: number;
   };
   materials: {
-    materialCount: number;
-    pbrMaterials: number;
-    unlitMaterials: number;
-    extensions: string[];
-  };
-  textures: {
+    count: number;
+    types: string[];
     textureCount: number;
     totalTextureSize: number;
-    formats: Record<string, number>;
-    maxResolution: [number, number];
-    colorSpaces: Record<string, number>;
   };
   animations: {
-    animationCount: number;
-    totalDuration: number;
-    channels: number;
-    samplers: number;
+    count: number;
+    totalKeyframes: number;
+    duration: number;
+  };
+  scene: {
+    nodeCount: number;
+    maxDepth: number;
   };
   extensions: {
     used: string[];
     required: string[];
+    count: number;
   };
-  performance: {
-    estimatedDrawCalls: number;
-    estimatedMemoryUsage: number;
-    bottlenecks: string[];
-    recommendations: string[];
+  fileInfo: {
+    size: number;
+    format: 'glTF' | 'GLB';
+    version: string;
   };
 }
 
@@ -111,9 +97,9 @@ export interface ValidationIssue {
   pointer?: string;
 }
 
-export interface ProcessResult {
+export interface ProcessResult<T = any> {
   success: boolean;
-  data?: any;
+  data?: T;
   error?: string;
   warnings?: string[];
   metrics?: {

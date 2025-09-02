@@ -73,6 +73,9 @@ jest.mock('@gltf-transform/core', () => {
 
   class MockNode {
     listChildren() { return []; }
+    getParent() { return null; }
+    getName() { return 'TestNode'; }
+    getMesh() { return new MockMesh(); }
   }
 
   class MockScene {
@@ -96,7 +99,11 @@ jest.mock('@gltf-transform/core', () => {
   }
 
   class MockNodeIO {
-    read() { return Promise.resolve(new MockDocument()); }
+    registerExtensions() { return this; }
+    registerDependencies() { return this; }
+    async read() {
+      return new MockDocument();
+    }
   }
 
   return {
@@ -118,10 +125,14 @@ describe('ModelAnalyzer', () => {
   test('should analyze a model successfully', async () => {
     const result = await analyzer.analyze(mockFilePath);
 
+    if (!result.success) {
+      console.log('Analysis failed with error:', result.error);
+    }
+
     expect(result.success).toBe(true);
     expect(result.data).toBeDefined();
     expect(result.metrics).toBeDefined();
-    expect(result.metrics.processingTime).toBeGreaterThanOrEqual(0);
+    expect(result.metrics?.processingTime).toBeGreaterThanOrEqual(0);
   });
 
   test('should return geometry statistics', async () => {
@@ -178,6 +189,17 @@ describe('ModelAnalyzer', () => {
     expect(result.data?.fileInfo.version).toBe('2.0');
   });
 
+  test('should return extensions information', async () => {
+    const result = await analyzer.analyze(mockFilePath);
+
+    expect(result.success).toBe(true);
+    expect(result.data).toBeDefined();
+    expect(result.data?.extensions).toBeDefined();
+    expect(result.data?.extensions.used).toEqual(['KHR_draco_mesh_compression']);
+    expect(result.data?.extensions.required).toEqual([]);
+    expect(result.data?.extensions.count).toBe(1);
+  });
+
   test('should handle analysis errors', async () => {
     // Mock NodeIO to throw an error
     jest.spyOn(analyzer['io'], 'read').mockRejectedValueOnce(new Error('Analysis error'));
@@ -187,6 +209,6 @@ describe('ModelAnalyzer', () => {
     expect(result.success).toBe(false);
     expect(result.error).toBe('Analysis error');
     expect(result.metrics).toBeDefined();
-    expect(result.metrics.processingTime).toBeGreaterThanOrEqual(0);
+    expect(result.metrics?.processingTime).toBeGreaterThanOrEqual(0);
   });
 });

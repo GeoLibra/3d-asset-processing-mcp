@@ -151,7 +151,7 @@ export class GltfProcessor {
         const textureFiles = fs.readdirSync(outputDir).filter((file) => {
           const ext = path.extname(file).toLowerCase();
           return (
-            ['.png', '.jpg', '.jpeg', '.webp'].includes(ext) &&
+            ['.png', '.jpg', '.jpeg', '.webp', '.bmp', '.gif', '.ktx2', '.basis'].includes(ext) &&
             file.includes(
               path.basename(
                 options.outputPath || '',
