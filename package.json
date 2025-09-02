@@ -48,6 +48,7 @@
     "tsx": "^4.0.0",
     "typescript": "^5.0.0"
   },
+  "homepage": "https://github.com/GeoLibra/3d-asset-processing-mcp",
   "repository": {
     "type": "git",
     "url": "git@github.com:GeoLibra/3d-asset-processing-mcp.git"
