@@ -437,50 +437,6 @@ export const gltfProcessTool: MCPTool = {
 };
 
 /**
- * glTF Format Conversion Tool
- */
-export const gltfConvertTool: MCPTool = {
-  name: 'gltf_convert',
-  description: 'Convert between glTF and GLB formats',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      inputPath: {
-        type: 'string',
-        description: 'Path to the input glTF/GLB file'
-      },
-      outputFormat: {
-        type: 'string',
-        enum: ['glb', 'gltf'],
-        description: 'Target output format'
-      },
-      outputPath: {
-        type: 'string',
-        description: 'Optional output path (auto-generated if not provided)'
-      }
-    },
-    required: ['inputPath', 'outputFormat']
-  },
-  execute: async (params: { inputPath: string; outputFormat: 'glb' | 'gltf'; outputPath?: string }): Promise<ProcessResult> => {
-    try {
-      logger.info(`Converting ${params.inputPath} to ${params.outputFormat}`);
-      const result = await globalGltfProcessor.convert(params.inputPath, params.outputFormat, params.outputPath);
-      return result;
-    } catch (error) {
-      logger.error('glTF convert tool error:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-        metrics: {
-          processingTime: 0,
-          memoryUsage: process.memoryUsage().heapUsed
-        }
-      };
-    }
-  }
-};
-
-/**
  * glTF Transform Processing Tool
  */
 export const gltfTransformTool: MCPTool = {
@@ -786,104 +742,6 @@ export const gltfCompressTexturesTool: MCPTool = {
   }
 };
 
-/**
- * glTF Draco Compression Tool
- */
-export const gltfDracoTool: MCPTool = {
-  name: 'gltf_draco',
-  description: 'Apply Draco compression to glTF geometry',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      inputPath: {
-        type: 'string',
-        description: 'Path to the input glTF/GLB file'
-      },
-      compressionLevel: {
-        type: 'number',
-        minimum: 0,
-        maximum: 10,
-        description: 'Compression level (0-10, higher = better compression)',
-        default: 7
-      },
-      quantizePosition: {
-        type: 'number',
-        minimum: 0,
-        maximum: 16,
-        description: 'Position quantization bits',
-        default: 14
-      },
-      quantizeNormal: {
-        type: 'number',
-        minimum: 0,
-        maximum: 16,
-        description: 'Normal quantization bits',
-        default: 10
-      },
-      quantizeTexcoord: {
-        type: 'number',
-        minimum: 0,
-        maximum: 16,
-        description: 'Texture coordinate quantization bits',
-        default: 12
-      },
-      quantizeColor: {
-        type: 'number',
-        minimum: 0,
-        maximum: 16,
-        description: 'Color quantization bits',
-        default: 8
-      },
-      quantizeGeneric: {
-        type: 'number',
-        minimum: 0,
-        maximum: 16,
-        description: 'Generic attribute quantization bits',
-        default: 12
-      },
-      outputPath: {
-        type: 'string',
-        description: 'Optional output path (auto-generated if not provided)'
-      }
-    },
-    required: ['inputPath']
-  },
-  execute: async (params: {
-    inputPath: string;
-    compressionLevel?: number;
-    quantizePosition?: number;
-    quantizeNormal?: number;
-    quantizeTexcoord?: number;
-    quantizeColor?: number;
-    quantizeGeneric?: number;
-    outputPath?: string;
-  }): Promise<ProcessResult> => {
-    try {
-      logger.info(`Applying Draco compression to glTF file: ${params.inputPath}`);
-      const options = {
-        compressionLevel: params.compressionLevel || 7,
-        quantizePosition: params.quantizePosition || 14,
-        quantizeNormal: params.quantizeNormal || 10,
-        quantizeTexcoord: params.quantizeTexcoord || 12,
-        quantizeColor: params.quantizeColor || 8,
-        quantizeGeneric: params.quantizeGeneric || 12
-      };
-      const result = await globalGltfTransformProcessor.applyDraco(params.inputPath, options, params.outputPath);
-      return result;
-    } catch (error) {
-      logger.error('glTF Draco tool error:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-        metrics: {
-          processingTime: 0,
-          memoryUsage: process.memoryUsage().heapUsed
-        }
-      };
-    }
-  }
-};
-
 // Export all tools
 export const allTools: MCPTool[] = [
   analyzeModelTool,
@@ -892,10 +750,8 @@ export const allTools: MCPTool[] = [
   getPresetsTools,
   getValidatorStatusTool,
   gltfProcessTool,
-  gltfConvertTool,
   gltfTransformTool,
   gltfTransformOptimizeTool,
   gltfSimplifiyTool,
   gltfCompressTexturesTool,
-  gltfDracoTool,
 ];
