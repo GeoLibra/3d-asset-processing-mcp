@@ -20,7 +20,7 @@ install the Playwright MCP server with your client.
       "command": "npx",
       "args": [
         "-y",
-        "3d-asset-processing-mcp@0.0.1-beta.2"
+        "3d-asset-processing-mcp@0.0.1-beta.4"
       ]
     }
   }
@@ -37,24 +37,6 @@ This MCP tool comes with all necessary dependencies pre-installed:
 
 **No additional installations required!** Users can start using glTF processing features immediately after installing this MCP tool.
 
-
-### Command Line Interface
-
-The project includes a CLI for processing 3D models:
-
-```bash
-# Convert between formats
-npx gltf-process convert input.gltf --format glb --output output.glb
-
-# Extract textures
-npx gltf-process extract-textures input.glb
-
-# Optimize a model
-npx gltf-process optimize input.glb --draco --output optimized.glb
-
-# Process with custom options
-npx gltf-process process input.glb --separate-textures --optimize --draco
-```
 
 ## MCP Integration
 
@@ -74,7 +56,6 @@ This project implements the Model Context Protocol (MCP), allowing it to be used
 - `gltf_transform_optimize`: Optimize glTF files using gltf-transform with default optimization settings
 - `gltf_simplify`: Simplify geometry in glTF files to reduce polygon count
 - `gltf_compress_textures`: Compress textures in glTF files
-- `gltf_draco`: Apply Draco compression to glTF geometry
 
 ## Development
 
