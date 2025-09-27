@@ -1,6 +1,7 @@
 import { ValidationReport, ValidationIssue, ProcessResult } from '../types';
 import { globalCache } from '../utils/cache';
 import logger from '../utils/logger';
+import { GLB_EXT, GLTF_EXT } from '../utils/gltf-constants';
 const gltfValidator = require('gltf-validator');
 
 export class SimpleValidator {
@@ -193,7 +194,7 @@ export class SimpleValidator {
 
       // Check file extension
       const ext = path.extname(filePath).toLowerCase();
-      if (!['.gltf', '.glb'].includes(ext)) {
+      if (![GLTF_EXT, GLB_EXT].includes(ext)) {
         warnings.push({
           code: 'UNSUPPORTED_EXTENSION',
           message: `File extension ${ext} may not be supported`,
@@ -217,7 +218,7 @@ export class SimpleValidator {
       }
 
       // Basic format check for GLB files
-      if (ext === '.glb') {
+      if (ext === GLB_EXT) {
         const buffer = fs.readFileSync(filePath);
         if (buffer.length < 12 || buffer.toString('ascii', 0, 4) !== 'glTF') {
           errors.push({

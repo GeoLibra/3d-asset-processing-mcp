@@ -62,10 +62,7 @@ This project implements the Model Context Protocol (MCP), allowing it to be used
 
 ### Core Tools
 - `analyze_model`: Analyze a 3D model and provide detailed statistics
-- `optimize_model`: Optimize a 3D model using predefined presets
-- `validate_model`: Validate a 3D model for compliance and compatibility
-- `get_presets`: Get list of available optimization presets
-- `get_validator_status`: Check the status and availability of gltf-validator
+- `validate_model`: Validate a 3D model for compliance and compatibility, and also returns validator availability/status
 
 ### glTF Pipeline Tools
 - `gltf_process`: Process glTF files using gltf-pipeline with various optimization options

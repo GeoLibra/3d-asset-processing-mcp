@@ -1,6 +1,6 @@
-import { globalGltfTransformProcessor, GltfTransformOptions } from '../core/gltf-transform-processor';
 import logger from '../utils/logger';
 import * as fs from 'fs';
+import { GltfTransformExecutor, GltfTransformExecOptions } from '../core/gltf-transform-executor';
 
 /**
  * MCP server for gltf-transform integration
@@ -61,7 +61,7 @@ export const gltfTransformMcp = {
         },
         required: ['inputPath']
       },
-      execute: async (args: GltfTransformOptions) => {
+      execute: async (args: GltfTransformExecOptions) => {
         try {
           if (!fs.existsSync(args.inputPath)) {
             return {
@@ -70,9 +70,9 @@ export const gltfTransformMcp = {
             };
           }
 
-          const result = await globalGltfTransformProcessor.process(args);
-
-          return result;
+          const executor = new GltfTransformExecutor();
+          const command = await executor.execute(args);
+          return { success: true, data: { inputPath: args.inputPath, outputPath: args.outputPath, command } };
         } catch (error) {
           logger.error('MCP process error:', error);
           return {
@@ -111,9 +111,9 @@ export const gltfTransformMcp = {
             };
           }
 
-          const result = await globalGltfTransformProcessor.optimize(args.inputPath, args.outputPath);
-
-          return result;
+          const executor = new GltfTransformExecutor();
+          const command = await executor.execute({ inputPath: args.inputPath, outputPath: args.outputPath });
+          return { success: true, data: { inputPath: args.inputPath, outputPath: args.outputPath, command } };
         } catch (error) {
           logger.error('MCP optimize error:', error);
           return {
@@ -156,9 +156,9 @@ export const gltfTransformMcp = {
             };
           }
 
-          const result = await globalGltfTransformProcessor.simplify(args.inputPath, args.ratio, args.outputPath);
-
-          return result;
+          const executor = new GltfTransformExecutor();
+          const command = await executor.execute({ inputPath: args.inputPath, outputPath: args.outputPath, simplify: true, simplifyOptions: { ratio: args.ratio ?? 0.5 } });
+          return { success: true, data: { inputPath: args.inputPath, outputPath: args.outputPath, command } };
         } catch (error) {
           logger.error('MCP simplify error:', error);
           return {

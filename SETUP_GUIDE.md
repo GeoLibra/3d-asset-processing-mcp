@@ -28,9 +28,7 @@ Create or edit `.kiro/settings/mcp.json` in your workspace:
       "disabled": false,
       "autoApprove": [
         "analyze_model",
-        "validate_model",
-        "get_presets",
-        "get_validator_status"
+        "validate_model"
       ]
     }
   }
@@ -66,19 +64,7 @@ Analyze this 3D model: /path/to/model.glb
 - Animation data
 - Performance recommendations
 
-### 2. optimize_model
-Optimize 3D models using presets
 
-**Usage in Kiro:**
-```
-Optimize this model using the web-lite preset: /path/to/model.glb
-```
-
-**Available Presets:**
-- `web-high`: High quality Web optimization
-- `web-lite`: Lightweight Web optimization
-- `mobile`: Mobile optimization
-- `editor-safe`: Editor-safe optimization
 
 ### 3. validate_model
 Validate model compliance and compatibility
@@ -94,21 +80,9 @@ Validate this model's Web compatibility: /path/to/model.glb
 - `mobile-compatible`: Mobile compatibility
 - `strict`: Strict validation
 
-### 4. get_presets
-Get all available optimization presets
 
-**Usage in Kiro:**
-```
-Show all available optimization presets
-```
 
-### 5. get_validator_status
-Check the status of gltf-validator
 
-**Usage in Kiro:**
-```
-Check validator status
-```
 
 ## Supported Input Formats
 
@@ -136,26 +110,16 @@ Analyze this base64 model: data:model/gltf-binary;base64,R0xURg...
    Analyze this model: /path/to/original.glb
    ```
 
-2. **Check Validator Status**
-   ```
-   Check validator status
-   ```
-
-3. **Validate Model**
+2. **Validate Model (includes validator status)**
    ```
    Validate this model using strict rules: /path/to/original.glb
    ```
 
-4. **Optimize Model**
-   ```
-   Optimize this model using the web-lite preset: /path/to/original.glb
-   Output to: /path/to/optimized.glb
-   ```
 
-5. **Validate Optimized Model**
-   ```
-   Validate the optimized model: /path/to/optimized.glb
-   ```
+
+
+
+
 
 ### Batch Processing
 ```

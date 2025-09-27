@@ -4,6 +4,7 @@ import { createHash } from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { ModelInput } from '../types';
 import logger from './logger';
+import { GLB_EXT, GLTF_EXT } from './gltf-constants';
 
 export class FileHandler {
   private tempDir: string;
@@ -129,10 +130,10 @@ export class FileHandler {
    */
   private getExtensionFromMimeType(mimeType: string): string | null {
     const mimeMap: Record<string, string> = {
-      'model/gltf+json': '.gltf',
-      'model/gltf-binary': '.glb',
-      'application/octet-stream': '.glb',
-      'application/json': '.gltf'
+      'model/gltf+json': GLTF_EXT,
+      'model/gltf-binary': GLB_EXT,
+      'application/octet-stream': GLB_EXT,
+      'application/json': GLTF_EXT
     };
     return mimeMap[mimeType] || null;
   }

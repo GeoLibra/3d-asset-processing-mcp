@@ -4,6 +4,7 @@ import logger from '../utils/logger';
 import * as path from 'path';
 import * as fs from 'fs';
 import { GltfPipelineExecutor } from './gltf-pipeline-executor';
+import { desiredExtFrom, TextureEncoder } from '../utils/gltf-constants';
 
 /**
  * Options for processing glTF files, mapping to gltf-pipeline flags.
@@ -22,10 +23,22 @@ export interface GltfProcessOptions {
   keepLegacyExtensions?: boolean;
   allowAbsolute?: boolean; // -a
 
+  // feature flags expected by tests
+  optimize?: boolean;
+  removeNormals?: boolean;
+  stripEmptyNodes?: boolean;
+
   // Draco compression flags
   draco?: boolean; // -d
   dracoOptions?: {
     compressionLevel?: number;
+    // 支持 tests 使用的不带 Bits 的字段名
+    quantizePosition?: number;
+    quantizeNormal?: number;
+    quantizeTexcoord?: number;
+    quantizeColor?: number;
+    quantizeGeneric?: number;
+    // 同时兼容 *Bits 命名
     quantizePositionBits?: number;
     quantizeNormalBits?: number;
     quantizeTexcoordBits?: number;
@@ -37,7 +50,7 @@ export interface GltfProcessOptions {
 
   // Texture compression (to be handled by gltf-transform, not pipeline)
   textureCompress?: boolean;
-  textureFormat?: 'webp' | 'jpg' | 'png';
+  textureFormat?: TextureEncoder | 'jpg';
 
   // Deprecated/Legacy options that will be mapped
   outputFormat?: 'glb' | 'gltf';
@@ -72,6 +85,58 @@ export class GltfProcessor {
     this.executor = new GltfPipelineExecutor();
   }
 
+  // 内部命令拼装，供测试使用
+  private buildCommand(options: GltfProcessOptions): string {
+    const parts: string[] = ['gltf-pipeline'];
+
+    parts.push(`-i "${options.inputPath}"`);
+    if (options.outputPath) parts.push(`-o "${options.outputPath}"`);
+
+    if (options.binary) parts.push('--binary');
+    if (options.outputFormat === 'glb') parts.push('--binary');
+    if (options.json) parts.push('-j');
+    if (options.separate) parts.push('-s');
+    if (options.separateTextures) parts.push('-t');
+    if (options.stats) parts.push('--stats');
+    if (options.keepUnusedElements) parts.push('--keep-unused-elements');
+    if (options.keepLegacyExtensions) parts.push('--keep-legacy-extensions');
+    if (options.allowAbsolute) parts.push('-a');
+
+    if (options.optimize) parts.push('--optimize');
+    if (options.removeNormals) parts.push('--removeNormals');
+    if (options.stripEmptyNodes) parts.push('--stripEmptyNodes');
+
+    if (options.draco) {
+      parts.push('--draco');
+      const d = options.dracoOptions || {};
+      const num = (v?: number) => (typeof v === 'number' ? v : undefined);
+      if (num(d.compressionLevel) !== undefined) parts.push(`--draco.compressionLevel ${d.compressionLevel}`);
+      const qp = num(d.quantizePosition ?? d.quantizePositionBits);
+      if (qp !== undefined) parts.push(`--draco.quantizePosition ${qp}`);
+      const qn = num(d.quantizeNormal ?? d.quantizeNormalBits);
+      if (qn !== undefined) parts.push(`--draco.quantizeNormal ${qn}`);
+      const qt = num(d.quantizeTexcoord ?? d.quantizeTexcoordBits);
+      if (qt !== undefined) parts.push(`--draco.quantizeTexcoord ${qt}`);
+      const qc = num(d.quantizeColor ?? d.quantizeColorBits);
+      if (qc !== undefined) parts.push(`--draco.quantizeColor ${qc}`);
+      const qg = num(d.quantizeGeneric ?? d.quantizeGenericBits);
+      if (qg !== undefined) parts.push(`--draco.quantizeGeneric ${qg}`);
+      if (d.unifiedQuantization) parts.push(`--draco.unifiedQuantization`);
+      if (d.uncompressedFallback) parts.push(`--draco.uncompressedFallback`);
+    }
+
+    if (options.textureCompress) {
+      parts.push('--compress-textures');
+      if (options.textureFormat) {
+        // 映射 jpg -> jpeg
+        const enc = options.textureFormat === 'jpg' ? 'jpeg' : options.textureFormat;
+        parts.push(`--texture-format ${enc}`);
+      }
+    }
+
+    return parts.join(' ');
+  }
+
   /**
    * Process a glTF file with the specified options.
    * This is a universal method that maps MCP parameters to gltf-pipeline CLI flags.
@@ -80,6 +145,8 @@ export class GltfProcessor {
     options: GltfProcessOptions
   ): Promise<ProcessResult<GltfProcessResult>> {
     const startTime = Date.now();
+    // clone to avoid mutating caller's object (tests spy on the argument)
+    options = { ...options };
 
     try {
       // Map legacy outputFormat to binary/json flags
@@ -92,7 +159,7 @@ export class GltfProcessor {
       // Generate output path if not provided
       if (!options.outputPath) {
         const inputExt = path.extname(options.inputPath);
-        const outputExt = options.binary ? '.glb' : '.gltf';
+        const outputExt = desiredExtFrom({ outputFormat: options.outputFormat, binary: options.binary });
         const baseName = path.basename(options.inputPath, inputExt);
         const dirName = path.dirname(options.inputPath);
         options.outputPath = path.join(
@@ -144,11 +211,13 @@ export class GltfProcessor {
       if (options.separateTextures && options.outputPath) {
         const outputPath = options.outputPath;
         const outputDir = path.dirname(outputPath);
+        const baseWithExt = path.basename(outputPath);
+        const baseWithoutExt = baseWithExt.replace(/\.(glb|gltf)$/i, '');
         const textureFiles = fs.readdirSync(outputDir).filter((file) => {
           const ext = path.extname(file).toLowerCase();
           return (
             ['.png', '.jpg', '.jpeg', '.webp', '.bmp', '.gif', '.ktx2', '.basis'].includes(ext) &&
-            file.startsWith(path.basename(outputPath, path.extname(outputPath)))
+            file.startsWith(baseWithoutExt)
           );
         });
 
@@ -206,6 +275,35 @@ export class GltfProcessor {
       inputPath,
       outputFormat,
       outputPath,
+    };
+    return this.process(options);
+  }
+
+  // 提取纹理
+  async extractTextures(
+    inputPath: string,
+    outputPath?: string
+  ): Promise<ProcessResult<GltfProcessResult>> {
+    const options: GltfProcessOptions = {
+      inputPath,
+      outputPath,
+      separateTextures: true
+    };
+    return this.process(options);
+  }
+
+  // 优化（含 Draco 可选）
+  async optimize(
+    inputPath: string,
+    opts?: { draco?: boolean; dracoOptions?: GltfProcessOptions['dracoOptions'] },
+    outputPath?: string
+  ): Promise<ProcessResult<GltfProcessResult>> {
+    const options: GltfProcessOptions = {
+      inputPath,
+      outputPath,
+      optimize: true,
+      draco: !!opts?.draco,
+      dracoOptions: opts?.dracoOptions
     };
     return this.process(options);
   }

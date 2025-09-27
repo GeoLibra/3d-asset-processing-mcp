@@ -12,7 +12,8 @@ jest.mock('../../utils/logger', () => ({
 // Mock child_process
 jest.mock('child_process', () => ({
   exec: jest.fn((cmd, cb) => {
-    cb(null, { stdout: 'CLI executed successfully', stderr: '' });
+    // Follow Node's exec callback signature: (error, stdout: string, stderr: string)
+    cb(null, 'CLI executed successfully', '');
     return { stdout: '', stderr: '' };
   })
 }));
@@ -249,8 +250,9 @@ describe('GLTF Process CLI', () => {
 
   test('should handle command errors', async () => {
     // Mock exec to simulate an error
-    (exec as jest.Mock).mockImplementationOnce((cmd, cb) => {
-      cb(new Error('Command failed'), { stdout: '', stderr: 'Error: Command failed' });
+    (exec as unknown as jest.Mock).mockImplementationOnce((cmd, cb) => {
+      // Follow Node's exec signature: (error, stdout: string, stderr: string)
+      cb(new Error('Command failed'), '', 'Error: Command failed');
       return { stdout: '', stderr: '' };
     });
 

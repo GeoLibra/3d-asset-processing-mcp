@@ -1,7 +1,9 @@
 import { Router } from 'express';
-import { globalGltfTransformProcessor, GltfTransformOptions } from '../core/gltf-transform-processor';
 import logger from '../utils/logger';
 import * as fs from 'fs';
+import * as path from 'path';
+import { GltfTransformExecutor, GltfTransformExecOptions } from '../core/gltf-transform-executor';
+import { desiredExtFrom } from '../utils/gltf-constants';
 
 const router = Router();
 
@@ -11,23 +13,35 @@ const router = Router();
  */
 router.post('/process', async (req, res) => {
   try {
-    const options: GltfTransformOptions = req.body;
+    const options: GltfTransformExecOptions = req.body;
 
-    if (!options.inputPath) {
+    if (!options?.inputPath) {
       return res.status(400).json({ error: 'Input path is required' });
     }
-
     if (!fs.existsSync(options.inputPath)) {
       return res.status(404).json({ error: 'Input file not found' });
     }
 
-    const result = await globalGltfTransformProcessor.process(options);
-
-    if (result.success) {
-      res.json(result);
-    } else {
-      res.status(500).json({ error: result.error });
+    // Ensure outputPath
+    if (!options.outputPath) {
+      const inputExt = path.extname(options.inputPath);
+      const baseName = path.basename(options.inputPath, inputExt);
+      const dirName = path.dirname(options.inputPath);
+      const desiredExt = desiredExtFrom({ outputFormat: options.outputFormat, binary: options.binary });
+      options.outputPath = path.join(dirName, `${baseName}_transformed${desiredExt}`);
     }
+
+    const executor = new GltfTransformExecutor();
+    const command = await executor.execute(options);
+
+    res.json({
+      success: true,
+      data: {
+        inputPath: options.inputPath,
+        outputPath: options.outputPath,
+        command
+      }
+    });
   } catch (error) {
     logger.error('API error:', error);
     res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
@@ -40,23 +54,23 @@ router.post('/process', async (req, res) => {
  */
 router.post('/optimize', async (req, res) => {
   try {
-    const { inputPath, outputPath } = req.body;
+    const { inputPath } = req.body as { inputPath?: string; outputPath?: string };
 
-    if (!inputPath) {
-      return res.status(400).json({ error: 'Input path is required' });
-    }
+    if (!inputPath) return res.status(400).json({ error: 'Input path is required' });
+    if (!fs.existsSync(inputPath)) return res.status(404).json({ error: 'Input file not found' });
 
-    if (!fs.existsSync(inputPath)) {
-      return res.status(404).json({ error: 'Input file not found' });
-    }
+    const execOptions: GltfTransformExecOptions = {
+      inputPath,
+      outputPath: req.body.outputPath,
+      outputFormat: req.body.outputFormat,
+      binary: req.body.binary,
+      // optimize via gltf-transform: just include 'optimize' in command via executor default pipeline
+    };
 
-    const result = await globalGltfTransformProcessor.optimize(inputPath, outputPath);
+    const executor = new GltfTransformExecutor();
+    const command = await executor.execute(execOptions);
 
-    if (result.success) {
-      res.json(result);
-    } else {
-      res.status(500).json({ error: result.error });
-    }
+    res.json({ success: true, data: { inputPath, outputPath: execOptions.outputPath, command } });
   } catch (error) {
     logger.error('API error:', error);
     res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
@@ -69,23 +83,22 @@ router.post('/optimize', async (req, res) => {
  */
 router.post('/simplify', async (req, res) => {
   try {
-    const { inputPath, outputPath, ratio } = req.body;
+    const { inputPath } = req.body as { inputPath?: string; ratio?: number; outputPath?: string };
 
-    if (!inputPath) {
-      return res.status(400).json({ error: 'Input path is required' });
-    }
+    if (!inputPath) return res.status(400).json({ error: 'Input path is required' });
+    if (!fs.existsSync(inputPath)) return res.status(404).json({ error: 'Input file not found' });
 
-    if (!fs.existsSync(inputPath)) {
-      return res.status(404).json({ error: 'Input file not found' });
-    }
+    const execOptions: GltfTransformExecOptions = {
+      inputPath,
+      outputPath: req.body.outputPath,
+      simplify: true,
+      simplifyOptions: { ratio: req.body.ratio ?? 0.5 }
+    };
 
-    const result = await globalGltfTransformProcessor.simplify(inputPath, ratio, outputPath);
+    const executor = new GltfTransformExecutor();
+    const command = await executor.execute(execOptions);
 
-    if (result.success) {
-      res.json(result);
-    } else {
-      res.status(500).json({ error: result.error });
-    }
+    res.json({ success: true, data: { inputPath, outputPath: execOptions.outputPath, command } });
   } catch (error) {
     logger.error('API error:', error);
     res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
@@ -98,23 +111,23 @@ router.post('/simplify', async (req, res) => {
  */
 router.post('/compress-textures', async (req, res) => {
   try {
-    const { inputPath, outputPath, textureOptions } = req.body;
+    const { inputPath } = req.body as { inputPath?: string; outputPath?: string; textureOptions?: any };
 
-    if (!inputPath) {
-      return res.status(400).json({ error: 'Input path is required' });
-    }
+    if (!inputPath) return res.status(400).json({ error: 'Input path is required' });
+    if (!fs.existsSync(inputPath)) return res.status(404).json({ error: 'Input file not found' });
 
-    if (!fs.existsSync(inputPath)) {
-      return res.status(404).json({ error: 'Input file not found' });
-    }
+    const execOptions: GltfTransformExecOptions = {
+      inputPath,
+      outputPath: req.body.outputPath,
+      textureCompress: true,
+      textureFormat: req.body?.textureOptions?.format,
+      // quality 等细节由 executor/CLI 侧处理或忽略
+    };
 
-    const result = await globalGltfTransformProcessor.compressTextures(inputPath, textureOptions, outputPath);
+    const executor = new GltfTransformExecutor();
+    const command = await executor.execute(execOptions);
 
-    if (result.success) {
-      res.json(result);
-    } else {
-      res.status(500).json({ error: result.error });
-    }
+    res.json({ success: true, data: { inputPath, outputPath: execOptions.outputPath, command} });
   } catch (error) {
     logger.error('API error:', error);
     res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
@@ -127,23 +140,22 @@ router.post('/compress-textures', async (req, res) => {
  */
 router.post('/draco', async (req, res) => {
   try {
-    const { inputPath, outputPath, dracoOptions } = req.body;
+    const { inputPath } = req.body as { inputPath?: string; outputPath?: string; dracoOptions?: any };
 
-    if (!inputPath) {
-      return res.status(400).json({ error: 'Input path is required' });
-    }
+    if (!inputPath) return res.status(400).json({ error: 'Input path is required' });
+    if (!fs.existsSync(inputPath)) return res.status(404).json({ error: 'Input file not found' });
 
-    if (!fs.existsSync(inputPath)) {
-      return res.status(404).json({ error: 'Input file not found' });
-    }
+    const execOptions: GltfTransformExecOptions = {
+      inputPath,
+      outputPath: req.body.outputPath,
+      draco: true,
+      dracoOptions: req.body.dracoOptions
+    };
 
-    const result = await globalGltfTransformProcessor.applyDraco(inputPath, dracoOptions, outputPath);
+    const executor = new GltfTransformExecutor();
+    const command = await executor.execute(execOptions);
 
-    if (result.success) {
-      res.json(result);
-    } else {
-      res.status(500).json({ error: result.error });
-    }
+    res.json({ success: true, data: { inputPath, outputPath: execOptions.outputPath, command } });
   } catch (error) {
     logger.error('API error:', error);
     res.status(500).json({ error: error instanceof Error ? error.message : String(error) });

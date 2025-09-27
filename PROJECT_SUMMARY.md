@@ -21,10 +21,7 @@ Successfully built a 3D asset processing server based on the Model Context Proto
 
 ### ✅ MCP Tools
 1. `analyze_model` - Analyze 3D models
-2. `optimize_model` - Optimize 3D models
-3. `validate_model` - Validate 3D models
-4. `get_presets` - Get optimization presets
-5. `get_validator_status` - Check validator status
+2. `validate_model` - Validate 3D models (now also returns validator availability/status)
 
 ## Project Structure
 
@@ -73,7 +70,7 @@ Successfully built a 3D asset processing server based on the Model Context Proto
       "command": "node",
       "args": ["/path/to/dist/server.js"],
       "disabled": false,
-      "autoApprove": ["analyze_model", "validate_model", "get_presets"]
+      "autoApprove": ["analyze_model", "validate_model"]
     }
   }
 }

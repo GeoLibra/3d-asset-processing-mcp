@@ -1,6 +1,9 @@
-import { globalGltfProcessor, GltfProcessOptions } from '../core/gltf-processor';
+import { GltfProcessOptions } from '../core/gltf-processor';
+import { GltfPipelineExecutor } from '../core/gltf-pipeline-executor';
 import logger from '../utils/logger';
 import * as fs from 'fs';
+import * as path from 'path';
+import { desiredExtFrom } from '../utils/gltf-constants';
 import { promisify } from 'util';
 import { exec } from 'child_process';
 
@@ -56,8 +59,26 @@ export const gltfPipelineMcp = {
               error: `Input file not found: ${args.inputPath}`,
             };
           }
-          // The global processor now handles all logic based on the provided options.
-          return await globalGltfProcessor.process(args);
+          // Normalize output flags and outputPath, then execute via executor
+          if (args.outputFormat === 'glb') args.binary = true;
+          if (!args.outputPath) {
+            const inputExt = path.extname(args.inputPath);
+            const baseName = path.basename(args.inputPath, inputExt);
+            const dirName = path.dirname(args.inputPath);
+            const desiredExt = desiredExtFrom({ outputFormat: args.outputFormat, binary: args.binary });
+            args.outputPath = path.join(dirName, `${baseName}_processed${desiredExt}`);
+          }
+
+          const executor = new GltfPipelineExecutor();
+          const command = await executor.execute(args);
+          return {
+            success: true,
+            data: {
+              inputPath: args.inputPath,
+              outputPath: args.outputPath,
+              command
+            }
+          };
         } catch (error) {
           logger.error('MCP process tool error:', error);
           return {

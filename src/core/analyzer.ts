@@ -2,6 +2,7 @@ import { NodeIO, Document } from '@gltf-transform/core';
 import { ModelAnalysis, ProcessResult } from '../types';
 import { globalCache } from '../utils/cache';
 import logger from '../utils/logger';
+import { GLB_EXT } from '../utils/gltf-constants';
 
 export class ModelAnalyzer {
   private io: NodeIO;
@@ -210,7 +211,7 @@ export class ModelAnalyzer {
 
     return {
       fileSize: stats.size,
-      format: filePath.endsWith('.glb') ? 'GLB' as const : 'glTF' as const,
+      format: filePath.endsWith(GLB_EXT) ? 'GLB' as const : 'glTF' as const,
       version: asset.version || '2.0',
       generator: asset.generator || 'Unknown'
     };

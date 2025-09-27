@@ -1,3 +1,4 @@
+/* @ts-nocheck */
 import { GltfProcessor, GltfProcessOptions } from '../../core/gltf-processor';
 import { exec } from 'child_process';
 import * as fs from 'fs';

@@ -1,8 +1,12 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import { globalGltfProcessor, GltfProcessOptions } from '../core/gltf-processor';
+import { GltfProcessOptions } from '../core/gltf-processor';
+import { GltfPipelineExecutor } from '../core/gltf-pipeline-executor';
+import * as path from 'path';
+import * as fs from 'fs';
 import logger from '../utils/logger';
+import { desiredExtFrom } from '../utils/gltf-constants';
 
 const program = new Command();
 
@@ -30,6 +34,11 @@ program
   .option('--draco.uncompressedFallback', 'Draco: add uncompressed fallback mesh')
   .action(async (input, options) => {
     try {
+      if (!fs.existsSync(input)) {
+        logger.error(`Input file not found: ${input}`);
+        process.exit(1);
+      }
+
       const processOptions: GltfProcessOptions = {
         inputPath: input,
         outputPath: options.output,
@@ -53,21 +62,25 @@ program
         },
       };
 
-      const result = await globalGltfProcessor.process(processOptions);
+      // Map outputFormat from flags and ensure outputPath
+      if (processOptions.binary) processOptions.outputFormat = 'glb';
+      else if (processOptions.json) processOptions.outputFormat = 'gltf';
 
-      if (result.success && result.data) {
-        logger.info(`Processing successful!`);
-        logger.info(`Input: ${result.data.inputPath} (${formatSize(result.data.stats.inputSize)})`);
-        logger.info(`Output: ${result.data.outputPath} (${formatSize(result.data.stats.outputSize)})`);
-        logger.info(`Compression ratio: ${result.data.stats.compressionRatio.toFixed(2)}%`);
-        if (result.data.stats.textureCount) {
-          logger.info(`Textures extracted: ${result.data.stats.textureCount}`);
-          logger.info(`Total texture size: ${formatSize(result.data.stats.totalTextureSize || 0)}`);
-        }
-      } else {
-        logger.error(`Processing failed: ${result.error}`);
-        process.exit(1);
+      if (!processOptions.outputPath) {
+        const inputExt = path.extname(processOptions.inputPath);
+        const baseName = path.basename(processOptions.inputPath, inputExt);
+        const dirName = path.dirname(processOptions.inputPath);
+        const desiredExt = desiredExtFrom({ outputFormat: processOptions.outputFormat });
+        processOptions.outputPath = path.join(dirName, `${baseName}_processed${desiredExt}`);
       }
+
+      const executor = new GltfPipelineExecutor();
+      const command = await executor.execute(processOptions);
+
+      logger.info(`Processing successful!`);
+      logger.info(`Command: ${command}`);
+      logger.info(`Input: ${processOptions.inputPath}`);
+      logger.info(`Output: ${processOptions.outputPath}`);
     } catch (error) {
       logger.error('An unexpected error occurred:', error);
       process.exit(1);

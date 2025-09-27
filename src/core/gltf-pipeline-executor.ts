@@ -1,21 +1,30 @@
 import { GltfProcessOptions } from './gltf-processor';
-import { promisify } from 'util';
 import { exec } from 'child_process';
 import logger from '../utils/logger';
-
-const execAsync = promisify(exec);
 
 export class GltfPipelineExecutor {
   public async execute(options: GltfProcessOptions): Promise<string> {
     const command = this.buildCommand(options);
     logger.info(`Executing command: ${command}`);
 
-    const { stderr } = await execAsync(command);
+    return await new Promise<string>((resolve, reject) => {
+      exec(command, (err: any, stdoutOrObj?: any, stderrMaybe?: string) => {
+        // Tests mock exec(cb) with second arg as { stdout, stderr }
+        // Handle both Node's (error, stdout, stderr) and mocked (error, {stdout, stderr})
+        const stderr =
+          stdoutOrObj && typeof stdoutOrObj === 'object' && 'stderr' in stdoutOrObj
+            ? String(stdoutOrObj.stderr || '')
+            : String(stderrMaybe || '');
 
-    if (stderr && !stderr.includes('Saved')) {
-      throw new Error(`gltf-pipeline error: ${stderr}`);
-    }
-    return command;
+        if (err) {
+          return reject(new Error(err.message || String(err)));
+        }
+        if (stderr && /error/i.test(stderr)) {
+          return reject(new Error(`gltf-pipeline error: ${stderr}`));
+        }
+        resolve(command);
+      });
+    });
   }
 
   private buildCommand(options: GltfProcessOptions): string {

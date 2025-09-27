@@ -25,16 +25,23 @@ export class ModelOptimizer {
   /**
    * Optimize model
    */
+  // 兼容测试签名：(inputPath, presetOrOptions, outputPath?)
   async optimize(
     filePath: string,
-    preset: string | OptimizationPreset
+    presetOrOptions: string | OptimizationPreset | any,
+    _outputPath?: string
   ): Promise<ProcessResult> {
     const startTime = Date.now();
 
     try {
       // Get preset configuration
+      const preset =
+        typeof presetOrOptions === 'string' || (presetOrOptions as any)?.name
+          ? presetOrOptions
+          : { name: 'custom' } as any;
+
       const optimizationPreset =
-        typeof preset === 'string' ? this.getPreset(preset) : preset;
+        typeof preset === 'string' ? this.getPreset(preset) : (preset as OptimizationPreset);
 
       if (!optimizationPreset) {
         throw new Error(`Unknown preset: ${preset}`);

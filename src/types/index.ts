@@ -102,7 +102,7 @@ export interface ProcessResult<T = any> {
   data?: T;
   error?: string;
   warnings?: string[];
-  metrics?: {
+  metrics: {
     processingTime: number;
     memoryUsage: number;
   };
