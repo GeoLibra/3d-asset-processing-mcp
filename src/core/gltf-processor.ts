@@ -50,6 +50,7 @@ export interface GltfProcessResult {
   inputPath: string;
   outputPath: string;
   format: 'glb' | 'gltf';
+  command: string;
   stats: {
     inputSize: number;
     outputSize: number;
@@ -118,7 +119,7 @@ export class GltfProcessor {
       logger.info(`Starting glTF processing for: ${options.inputPath}`);
 
       // Execute the command
-      await this.executor.execute(options);
+      const command = await this.executor.execute(options);
 
       // Get file stats for the result
       const inputStats = fs.statSync(options.inputPath);
@@ -128,6 +129,7 @@ export class GltfProcessor {
         inputPath: options.inputPath,
         outputPath: options.outputPath,
         format: options.binary ? 'glb' : 'gltf',
+        command,
         stats: {
           inputSize: inputStats.size,
           outputSize: outputStats.size,

@@ -6,15 +6,16 @@ import logger from '../utils/logger';
 const execAsync = promisify(exec);
 
 export class GltfPipelineExecutor {
-  public async execute(options: GltfProcessOptions): Promise<void> {
+  public async execute(options: GltfProcessOptions): Promise<string> {
     const command = this.buildCommand(options);
-    logger.debug(`Executing command: ${command}`);
+    logger.info(`Executing command: ${command}`);
 
     const { stderr } = await execAsync(command);
 
     if (stderr && !stderr.includes('Saved')) {
       throw new Error(`gltf-pipeline error: ${stderr}`);
     }
+    return command;
   }
 
   private buildCommand(options: GltfProcessOptions): string {
