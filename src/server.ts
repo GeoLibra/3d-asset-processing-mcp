@@ -11,6 +11,7 @@ import { allTools } from './tools/index';
 import logger from './utils/logger';
 import { globalCache } from './utils/cache';
 import { globalFileHandler } from './utils/file-handler';
+import { version } from '../package.json';
 
 class AssetProcessingMCPServer {
   private server: Server;
@@ -19,7 +20,7 @@ class AssetProcessingMCPServer {
     this.server = new Server(
       {
         name: '3d-asset-processing-mcp',
-        version: '1.0.0',
+        version: version,
       }
     );
 
@@ -136,11 +137,9 @@ class AssetProcessingMCPServer {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
 
-    logger.info('3D Asset Processing MCP Server v1.0.0');
-    logger.info('Available tools:');
-    allTools.forEach(tool => {
-      logger.info(`  - ${tool.name}: ${tool.description}`);
-    });
+    // Log to file only, not to console to avoid interfering with MCP JSON-RPC protocol
+    logger.info('3D Asset Processing MCP Server v' + version + ' started');
+    logger.info(`Available tools: ${allTools.map(t => t.name).join(', ')}`);
     logger.info('Server ready for connections...');
   }
 }

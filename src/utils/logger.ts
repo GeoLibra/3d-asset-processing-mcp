@@ -17,7 +17,13 @@ export const logger = winston.createLogger({
 });
 
 // Add console output in development environment
-if (process.env.NODE_ENV !== 'production') {
+// But not when running as MCP server (stdout is used for JSON-RPC)
+const isInteractive = process.stdin.isTTY && process.stdout.isTTY;
+const forceConsole = process.env.FORCE_CONSOLE_LOG === 'true';
+const disableConsole = process.env.DISABLE_CONSOLE_LOG === 'true' || process.env.MCP_SERVER === 'true';
+const isMCPServer = !isInteractive && !forceConsole;
+
+if (process.env.NODE_ENV !== 'production' && !isMCPServer && !disableConsole) {
   logger.add(new winston.transports.Console({
     format: winston.format.combine(
       winston.format.colorize(),

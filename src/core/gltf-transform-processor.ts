@@ -97,7 +97,7 @@ export class GltfTransformProcessor {
     let textureSize = 0;
     for (const tex of textures) {
       const img: any = tex.getImage && tex.getImage();
-      if (img) textureSize += (img.byteLength ?? 0);
+      if (img) textureSize += img.byteLength ?? 0;
     }
 
     // drawCallCount approximate as number of primitives
@@ -107,8 +107,14 @@ export class GltfTransformProcessor {
     }
 
     return {
-      vertexCount: { before: vertexBefore, after: Math.max(1, vertexBefore - 10) },
-      triangleCount: { before: Math.floor(triBefore), after: Math.max(1, Math.floor(triBefore) - 10) },
+      vertexCount: {
+        before: vertexBefore,
+        after: Math.max(1, vertexBefore - 10),
+      },
+      triangleCount: {
+        before: Math.floor(triBefore),
+        after: Math.max(1, Math.floor(triBefore) - 10),
+      },
       drawCallCount: drawCalls,
       textureCount: textures.length,
       textureSize,
@@ -120,11 +126,7 @@ export class GltfTransformProcessor {
 
     if (opts.optimize) {
       // A sensible default optimize pipeline
-      transforms.push(
-        dedup(),
-        prune(),
-        weld(),
-      );
+      transforms.push(dedup(), prune(), weld());
       // also include reasonable defaults
       transforms.push(flatten(), joinFn(), resampleFn());
       transforms.push(simplifyFn({ ratio: 0.8, simplifier: {} as any }));
@@ -138,11 +140,17 @@ export class GltfTransformProcessor {
     if (opts.flatten) transforms.push(flatten());
     if (opts.join) transforms.push(joinFn());
     if (opts.resample) transforms.push(resampleFn(opts.resampleOptions ?? {}));
-    if (opts.simplify) transforms.push(simplifyFn({ ...(opts.simplifyOptions ?? {}), simplifier: {} as any }));
-    if (opts.compressTextures) transforms.push(textureCompressFn({
-      encoder: opts.textureOptions?.encoder ?? 'webp',
-      quality: opts.textureOptions?.quality ?? 80
-    } as any));
+    if (opts.simplify)
+      transforms.push(
+        simplifyFn({ ...(opts.simplifyOptions ?? {}), simplifier: {} as any })
+      );
+    if (opts.compressTextures)
+      transforms.push(
+        textureCompressFn({
+          encoder: opts.textureOptions?.encoder ?? 'webp',
+          quality: opts.textureOptions?.quality ?? 80,
+        } as any)
+      );
     if (opts.draco) transforms.push(dracoFn(opts.dracoOptions ?? {}));
 
     return transforms;
@@ -155,7 +163,9 @@ export class GltfTransformProcessor {
     }
   }
 
-  async process(opts: GltfTransformOptions): Promise<ProcessResult<GltfTransformResult>> {
+  async process(
+    opts: GltfTransformOptions
+  ): Promise<ProcessResult<GltfTransformResult>> {
     const start = Date.now();
     try {
       const inputPath = opts.inputPath;
@@ -181,12 +191,12 @@ export class GltfTransformProcessor {
         data: {
           inputPath,
           outputPath,
-          stats
+          stats,
         },
         metrics: {
           processingTime: Date.now() - start,
-          memoryUsage: process.memoryUsage().heapUsed
-        }
+          memoryUsage: process.memoryUsage().heapUsed,
+        },
       };
     } catch (err) {
       logger.error('GltfTransform processing error:', err);
@@ -195,8 +205,8 @@ export class GltfTransformProcessor {
         error: err instanceof Error ? err.message : String(err),
         metrics: {
           processingTime: Date.now() - start,
-          memoryUsage: process.memoryUsage().heapUsed
-        }
+          memoryUsage: process.memoryUsage().heapUsed,
+        },
       };
     }
   }
@@ -212,7 +222,7 @@ export class GltfTransformProcessor {
       mergeMeshes: true,
       mergeMaterials: true,
       compressTextures: true,
-      draco: true
+      draco: true,
     } as any);
   }
 
@@ -221,25 +231,33 @@ export class GltfTransformProcessor {
       inputPath,
       outputPath,
       simplify: true,
-      simplifyOptions: { ratio }
+      simplifyOptions: { ratio },
     });
   }
 
-  async compressTextures(inputPath: string, textureOptions: { format: 'webp'|'jpeg'|'png'; quality: number }, outputPath?: string) {
+  async compressTextures(
+    inputPath: string,
+    textureOptions: { format: 'webp' | 'jpeg' | 'png'; quality: number },
+    outputPath?: string
+  ) {
     return this.process({
       inputPath,
       outputPath,
       compressTextures: true,
-      textureOptions
+      textureOptions,
     } as any);
   }
 
-  async applyDraco(inputPath: string, dracoOptions: Record<string, any>, outputPath?: string) {
+  async applyDraco(
+    inputPath: string,
+    dracoOptions: Record<string, any>,
+    outputPath?: string
+  ) {
     return this.process({
       inputPath,
       outputPath,
       draco: true,
-      dracoOptions
+      dracoOptions,
     });
   }
 }
