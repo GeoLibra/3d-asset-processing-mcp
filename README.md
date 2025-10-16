@@ -55,6 +55,13 @@ npm run build
 }
 ```
 
+## debug mcp
+
+```bash
+npx @modelcontextprotocol/inspector
+```
+
+![Debug image](./images/debug.png)
 ## License
 
 MIT
