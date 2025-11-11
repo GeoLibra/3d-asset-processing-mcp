@@ -1,3 +1,4 @@
 mcp:
   name: 3d-asset-processing-mcp
   entry: src/index.ts
+  description: A 3D asset processing MCP server
