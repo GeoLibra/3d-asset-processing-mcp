@@ -1,2 +1,3 @@
-runtime: typescript
-entry: src/index.ts
+mcp:
+  name: 3d-asset-processing-mcp
+  entry: src/index.ts
