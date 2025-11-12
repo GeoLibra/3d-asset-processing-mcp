@@ -99,16 +99,103 @@ export class GltfTransformExecutor {
       const command = this.buildCommand(options);
       logger.info(`Executing command: ${command}`);
 
-      const { stderr } = await execAsync(command);
+      const { stdout, stderr } = await execAsync(command);
 
       if (stderr && /error|failed|exception/i.test(stderr)) {
         throw new Error(`gltf-transform error: ${stderr}`);
       }
+
+      // For inspect and validate commands, save output to file and return file path
+      if (options.inspect || options.validate) {
+        // Strip ANSI color codes from output
+        const cleanOutput = this.stripAnsiCodes(stdout || '');
+
+        if (cleanOutput) {
+          // Save to markdown file
+          const outputFile = await this.saveInspectOutput(
+            cleanOutput,
+            options.inputPath,
+            options.inspect ? 'inspect' : 'validate'
+          );
+          return `Output saved to: ${outputFile}\n\n${cleanOutput}`;
+        }
+
+        return command;
+      }
+
       return command;
     } else {
       // Multi-step execution
       return await this.executeMultiStep(steps, options);
     }
+  }
+
+  /**
+   * Remove ANSI escape codes and clean up output for better readability
+   */
+  private stripAnsiCodes(str: string): string {
+    // Remove ANSI color codes
+    // eslint-disable-next-line no-control-regex
+    let cleaned = str.replace(/\u001b\[[0-9;]*m/g, '');
+
+    // Remove other ANSI escape sequences
+    // eslint-disable-next-line no-control-regex
+    cleaned = cleaned.replace(/\u001b\[[\d;]*[A-Za-z]/g, '');
+
+    // Replace Unicode box drawing characters with ASCII equivalents for better compatibility
+    cleaned = cleaned
+      .replace(/[─━]/g, '-')
+      .replace(/[│┃]/g, '|')
+      .replace(/[┌┏]/g, '+')
+      .replace(/[┐┓]/g, '+')
+      .replace(/[└┗]/g, '+')
+      .replace(/[┘┛]/g, '+')
+      .replace(/[├┣]/g, '+')
+      .replace(/[┤┫]/g, '+')
+      .replace(/[┬┳]/g, '+')
+      .replace(/[┴┻]/g, '+')
+      .replace(/[┼╋]/g, '+');
+
+    return cleaned;
+  }
+
+  /**
+   * Save inspect/validate output to a markdown file
+   */
+  private async saveInspectOutput(
+    output: string,
+    inputPath: string,
+    type: 'inspect' | 'validate'
+  ): Promise<string> {
+    const fs = await import('fs');
+    const pathMod = await import('path');
+
+    // Generate output filename
+    const inputBasename = pathMod.basename(inputPath, pathMod.extname(inputPath));
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    const outputFilename = `${inputBasename}_${type}_${timestamp}.md`;
+    const outputDir = pathMod.dirname(inputPath);
+    const outputPath = pathMod.join(outputDir, outputFilename);
+
+    // Format as markdown
+    const markdown = `# glTF ${type === 'inspect' ? 'Inspection' : 'Validation'} Report
+
+**File:** ${inputPath}
+**Generated:** ${new Date().toISOString()}
+**Command:** gltf-transform ${type}
+
+---
+
+\`\`\`
+${output}
+\`\`\`
+`;
+
+    // Write to file
+    fs.writeFileSync(outputPath, markdown, 'utf-8');
+    logger.info(`${type} output saved to: ${outputPath}`);
+
+    return outputPath;
   }
 
   private planExecutionSteps(options: GltfTransformExecOptions): string[] {
