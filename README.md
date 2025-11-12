@@ -18,7 +18,7 @@ Add to your MCP client configuration:
   "mcpServers": {
     "3d-asset-processing-mcp": {
       "command": "npx",
-      "args": ["-y", "3d-asset-processing-mcp@0.0.1-beta.5"]
+      "args": ["-y", "3d-asset-processing-mcp"]
     }
   }
 }
